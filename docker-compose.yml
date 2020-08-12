@@ -1,0 +1,62 @@
+version: "3"
+
+services:
+  backend:
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${PUBLIC_PORT}:3000"
+    entrypoint:
+      - node
+      - src/index
+      - --config=./.config.js
+    networks:
+      - default
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - default
+
+  grafana:
+    build:
+      context: ./grafana/
+      dockerfile: Dockerfile
+    command: --config=/etc/grafana/custom.ini
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - .env
+    networks:
+      - default
+
+  vector:
+    build:
+      context: ./vector/
+      dockerfile: Dockerfile
+    networks:
+      - default
+
+  prometheus:
+    build:
+      context: ./prometheus/
+      dockerfile: Dockerfile
+    command: --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - default
+
+volumes:
+  grafana_data:
+
+networks:
+  default:
